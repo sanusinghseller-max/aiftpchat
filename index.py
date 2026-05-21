@@ -2,25 +2,57 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from TTS.api import TTS
 import uuid
+import os
 
 app = FastAPI()
 
-tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2")
+# 🔥 LOAD XTTS MODEL
+tts = TTS(
+    model_name="tts_models/multilingual/multi-dataset/xtts_v2"
+)
 
+# 🔥 CREATE AUDIO FOLDER
+os.makedirs("audio", exist_ok=True)
+
+@app.get("/")
+def home():
+
+    return {
+        "status": "Voice API Running 😎"
+    }
+
+# 🔥 SPEAK API
 @app.post("/speak")
 async def speak(data: dict):
 
-    text = data["text"]
+    try:
 
-    voice = data["voice"]
+        # 🔥 GET TEXT
+        text = data["text"]
 
-    out = f"audio/{uuid.uuid4()}.wav"
+        # 🔥 GET VOICE NAME
+        voice = data["voice"]
 
-    tts.tts_to_file(
-        text=text,
-        speaker_wav=f"voices/{voice}.wav",
-        language="hi",
-        file_path=out
-    )
+        # 🔥 OUTPUT FILE
+        out = f"audio/{uuid.uuid4()}.wav"
 
-    return FileResponse(out)
+        # 🔥 GENERATE VOICE
+        tts.tts_to_file(
+            text=text,
+            speaker_wav=f"voice/{voice}.wav",
+            language="hi",
+            file_path=out
+        )
+
+        # 🔥 RETURN AUDIO
+        return FileResponse(
+            out,
+            media_type="audio/wav",
+            filename="voice.wav"
+        )
+
+    except Exception as e:
+
+        return {
+            "error": str(e)
+        }
